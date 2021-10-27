@@ -30,7 +30,7 @@ export default function Home(): JSX.Element {
       return null;
     }
 
-    return data.pages.map(page => page.data).flat();
+    return data.pages.map(page => page.data.data).flat();
   }, [data]);
 
   if (isLoading) {

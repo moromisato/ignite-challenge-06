@@ -1,4 +1,4 @@
-# ignite-challenge-06 UpFi
+UpFi - Challenge 6
 
 Esse projeto é o sexto desafio do bootcamp da Rocket.
 

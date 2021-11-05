@@ -36,7 +36,10 @@ export function CardList({ cards }: CardsProps): JSX.Element {
       <ModalViewImage
         isOpen={isOpen}
         imgUrl={selectedImageUrl}
-        onClose={onClose}
+        onClose={() => {
+          onClose();
+          setSelectedImageUrl(undefined);
+        }}
       />
     </>
   );

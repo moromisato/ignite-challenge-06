@@ -40,7 +40,13 @@ export function ModalViewImage({
           borderBottomRightRadius="md"
           borderBottomLeftRadius="md"
         >
-          <Link href={imgUrl} fontSize="0.875rem" color="white">
+          <Link
+            mt="8px"
+            mb="8px"
+            href={imgUrl}
+            fontSize="0.875rem"
+            color="white"
+          >
             Abrir original
           </Link>
         </ModalFooter>

@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import { Button, Box, Text } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import { useInfiniteQuery } from 'react-query';
@@ -8,7 +9,28 @@ import { api } from '../services/api';
 import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
 
+interface Image {
+  title: string;
+  description: string;
+  url: string;
+  ts: number;
+  id: string;
+}
+
+interface GetImagesResponse {
+  after: string;
+  data: Image[];
+}
+
 export default function Home(): JSX.Element {
+  async function getImages({ pageParam = null }): Promise<GetImagesResponse> {
+    const { data } = await api.get('/api/images', {
+      params: { after: pageParam },
+    });
+
+    return data;
+  }
+
   const {
     data,
     isLoading,
@@ -16,21 +38,16 @@ export default function Home(): JSX.Element {
     isFetchingNextPage,
     fetchNextPage,
     hasNextPage,
-  } = useInfiniteQuery(
-    'images',
-    ({ pageParam = null }) =>
-      api.get('/api/images', { params: { after: pageParam } }),
-    {
-      getNextPageParam: after => after ?? null,
-    }
-  );
+  } = useInfiniteQuery('images', getImages, {
+    getNextPageParam: nextPage => nextPage.after ?? null,
+  });
 
   const formattedData = useMemo(() => {
     if (!data) {
       return null;
     }
 
-    return data.pages.map(page => page.data.data).flat();
+    return data.pages.map(page => page.data).flat();
   }, [data]);
 
   if (isLoading) {
@@ -45,11 +62,15 @@ export default function Home(): JSX.Element {
     <>
       <Header />
 
-      <Box maxW={1120} px={20} mx="auto" my={20}>
+      <Box maxW={1120} px={[10, 15, 20]} mx="auto" my={[10, 15, 20]}>
         <CardList cards={formattedData} />
         {hasNextPage && (
-          <Button>
-            <Text>Load more</Text>
+          <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+            {isFetchingNextPage ? (
+              <Text>Carregando...</Text>
+            ) : (
+              <Text>Carregar mais</Text>
+            )}
           </Button>
         )}
       </Box>

@@ -1,6 +1,6 @@
 import { Box, Button, Stack, useToast } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from 'react-query';
 
 import { api } from '../../services/api';
@@ -18,25 +18,39 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
 
   const formValidations = {
     image: {
-      required: true,
-      lessThan10Mb: image => image.size < 10000,
+      required: 'Arquivo obrigatório',
+      validate: {
+        lessThan10Mb: image =>
+          image[0].size < 10000000 || 'O arquivo deve ser menor que 10MB',
+        acceptedFormats: image =>
+          /image\/jpeg|image\/png|image\/gif/g.test(image[0].type) ||
+          'Somente são aceitos arquivos PNG, JPEG e GIF',
+      },
     },
     title: {
-      required: true,
-      minLength: 2,
+      required: 'Título obrigatório',
+      minLength: 2 || 'Mínimo de 2 caracteres',
       maxLength: 20,
     },
     description: {
-      required: true,
-      maxLength: 65,
+      required: 'Descrição obrigatória',
+      maxLength: 65 || 'Máximo de 65 caracteres',
     },
   };
 
   const queryClient = useQueryClient();
   const mutation = useMutation(
-    // TODO MUTATION API POST REQUEST,
+    async (image: Record<string, unknown>) => {
+      await api.post('/api/images', {
+        title: image.title,
+        description: image.description,
+        url: imageUrl,
+      });
+    },
     {
-      // TODO ONSUCCESS MUTATION
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+      },
     }
   );
 
@@ -46,13 +60,29 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
 
   const onSubmit = async (data: Record<string, unknown>): Promise<void> => {
     try {
-      // TODO SHOW ERROR TOAST IF IMAGE URL DOES NOT EXISTS
-      // TODO EXECUTE ASYNC MUTATION
-      // TODO SHOW SUCCESS TOAST
+      if (!imageUrl) {
+        toast({
+          title: 'Imagem não adicionada',
+          description:
+            'É preciso adicionar e aguardar o upload de uma imagem antes de realizar o cadastro',
+        });
+      } else {
+        await mutation.mutateAsync(data);
+        toast({
+          title: 'Imagem cadastrada',
+          description: 'Sua imagem foi cadastrada com sucesso',
+        });
+      }
     } catch {
-      // TODO SHOW ERROR TOAST IF SUBMIT FAILED
+      toast({
+        title: 'Falha no cadastro',
+        description: 'Ocorreu um erro ao tentar cadastrar sua imagem',
+      });
     } finally {
-      // TODO CLEAN FORM, STATES AND CLOSE MODAL
+      reset();
+      setImageUrl('');
+      setLocalImageUrl('');
+      closeModal();
     }
   };
 
@@ -65,23 +95,20 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
           setLocalImageUrl={setLocalImageUrl}
           setError={setError}
           trigger={trigger}
-          {...register('image', {
-            validate: formValidations.image,
-          })}
-          // TODO SEND IMAGE ERRORS
-          // TODO REGISTER IMAGE INPUT WITH VALIDATIONS
+          error={errors.image}
+          {...register('image', formValidations.image)}
         />
 
         <TextInput
           placeholder="Título da imagem..."
-          // TODO SEND TITLE ERRORS
-          // TODO REGISTER TITLE INPUT WITH VALIDATIONS
+          error={errors.title}
+          {...register('title', formValidations.title)}
         />
 
         <TextInput
           placeholder="Descrição da imagem..."
-          // TODO SEND DESCRIPTION ERRORS
-          // TODO REGISTER DESCRIPTION INPUT WITH VALIDATIONS
+          error={errors.description}
+          {...register('description', formValidations.description)}
         />
       </Stack>
 
